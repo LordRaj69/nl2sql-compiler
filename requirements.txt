@@ -1,0 +1,2 @@
+pyspellchecker==0.8.3
+colorama==0.4.6
