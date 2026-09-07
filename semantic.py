@@ -34,31 +34,39 @@ class SemanticAnalyzer:
             if child.node_type != "WHERE":
                 continue
 
-            for condition in child.children:
+        for condition in child.children:
 
-                if condition.node_type != "CONDITION":
-                    continue
+            if condition.node_type != "CONDITION":
+                continue
 
-                column = condition.children[0].value
-                value = condition.children[2].value
+            column = condition.children[0].value
+            value = condition.children[2].value
 
-                # Check column exists
-                if column not in SCHEMA[table]:
+            # Check whether column exists
+            if column not in SCHEMA[table]:
+                self.errors.append(
+                    f"Column '{column}' does not exist."
+                )
+                continue
+
+            column_type = SCHEMA[table][column]
+
+            # Check INT columns
+            if column_type == "INT":
+                try:
+                    int(value)
+                except ValueError:
                     self.errors.append(
-                        f"Column '{column}' does not exist."
+                        f"Column '{column}' expects an integer."
                     )
-                    continue
 
-                column_type = SCHEMA[table][column]
+            # Check VARCHAR columns
+            elif column_type == "VARCHAR":
 
-                # Type checking
-                if column_type == "INT":
-                    try:
-                        int(value)
-                    except ValueError:
-                        self.errors.append(
-                            f"Column '{column}' expects an integer."
-                        )
+                if value.isdigit():
+                    self.errors.append(
+                        f"Column '{column}' expects text."
+                    )
 
     def get_errors(self):
         return self.errors
