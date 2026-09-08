@@ -10,6 +10,22 @@ SCHEMA = {
     }
 }
 
+DEPARTMENT_VALUES = {
+    "computer science",
+    "electrical",
+    "electrical engineering",
+    "mechanical",
+    "mechanical engineering",
+    "civil",
+    "civil engineering",
+    "electronics",
+    "electronics and communication",
+    "information technology",
+    "information science",
+    "artificial intelligence",
+    "data science",
+}
+
 def get_schema_keywords():
     """
     Returns all table names and column names.

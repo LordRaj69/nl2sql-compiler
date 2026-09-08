@@ -1,6 +1,6 @@
 # lexer.py
 import re
-from schema import SCHEMA
+from schema import DEPARTMENT_VALUES, SCHEMA
 from enum import Enum
 
 
@@ -34,20 +34,54 @@ class Token:
 
 KEYWORDS = {
     "show": TokenType.KEYWORD,
+    "list": TokenType.KEYWORD,
     "find": TokenType.KEYWORD,
     "get": TokenType.KEYWORD,
+    "fetch": TokenType.KEYWORD,
+    "retrieve": TokenType.KEYWORD,
+    "return": TokenType.KEYWORD,
+    "give": TokenType.KEYWORD,
+    "search": TokenType.KEYWORD,
     "display": TokenType.KEYWORD,
     "where": TokenType.KEYWORD,
+    "whose": TokenType.KEYWORD,
     "from": TokenType.KEYWORD,
     "all": TokenType.KEYWORD,
+    "me": TokenType.KEYWORD,
+    "the": TokenType.KEYWORD,
+    "records": TokenType.KEYWORD,
+    "record": TokenType.KEYWORD,
+    "data": TokenType.KEYWORD,
+    "information": TokenType.KEYWORD,
+    "of": TokenType.KEYWORD,
+    "that": TokenType.KEYWORD,
+    "with": TokenType.KEYWORD,
+    "having": TokenType.KEYWORD,
+    "is": TokenType.KEYWORD,
     "and": TokenType.KEYWORD,
     "or": TokenType.KEYWORD,
+}
+
+COMMAND_ALIASES = {
+    "list": "show",
+    "find": "show",
+    "get": "show",
+    "fetch": "show",
+    "retrieve": "show",
+    "return": "show",
+    "give": "show",
+    "search": "show",
+    "display": "show",
 }
 
 OPERATORS = {
     "greater": ">",
     "less": "<",
     "equal": "=",
+    "above": ">",
+    "over": ">",
+    "below": "<",
+    "under": "<",
     "not_equal": "!=",
     "greater_equal": ">=",
     "less_equal": "<=",
@@ -69,28 +103,50 @@ def identify_word(word):
     if word.isdigit():
         return Token(TokenType.NUMBER, word)
 
+    if word in DEPARTMENT_VALUES:
+        return Token(TokenType.STRING, word)
+
     # First check natural-language keywords.
     if word in KEYWORDS:
-        return Token(KEYWORDS[word], word)
+        return Token(KEYWORDS[word], COMMAND_ALIASES.get(word, word))
 
     # Check whether the word is a table name.
     if word in SCHEMA:
         return Token(TokenType.TABLE, word)
+
+    # Accept singular table names such as "student" for "students".
+    if f"{word}s" in SCHEMA:
+        return Token(TokenType.TABLE, f"{word}s")
 
     # Check whether the word is a column name.
     for columns in SCHEMA.values():
         if word in columns:
             return Token(TokenType.COLUMN, word)
 
+        # Accept common plural forms such as "names" for "name".
+        if word.endswith("s") and word[:-1] in columns:
+            return Token(TokenType.COLUMN, word[:-1])
+
     # Word is not recognized yet.
     return Token(TokenType.UNKNOWN, word)
 
 MULTI_WORD_OPERATORS = {
+    "is greater than or equal to": ">=",
+    "is less than or equal to": "<=",
     "greater than or equal to": ">=",
     "less than or equal to": "<=",
+    "at least": ">=",
+    "at most": "<=",
+    "more than": ">",
+    "older than": ">",
+    "is greater than": ">",
+    "younger than": "<",
+    "is less than": "<",
     "greater than": ">",
     "less than": "<",
+    "is equal to": "=",
     "equal to": "=",
+    "is not equal to": "!=",
     "not equal to": "!=",
 }
 
@@ -123,6 +179,12 @@ def tokenize(text):
     """
 
     text = text.lower()
+
+    # Keep known multi-word department values together as one string.
+    department_phrases = sorted(DEPARTMENT_VALUES, key=len, reverse=True)
+    for department in department_phrases:
+        if " " in department and department in text:
+            text = text.replace(department, f'"{department}"')
 
     # Check longer operator phrases first.
     phrases = sorted(

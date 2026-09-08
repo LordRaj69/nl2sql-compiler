@@ -16,6 +16,7 @@ class SemanticAnalyzer:
             )
             return False
 
+        self.check_columns(table)
         self.check_conditions(table)
 
         return len(self.errors) == 0
@@ -28,13 +29,14 @@ class SemanticAnalyzer:
         return None
 
     def check_conditions(self, table):
+        where_node = next(
+            (child for child in self.ast.children if child.node_type == "WHERE"),
+            None,
+        )
+        if where_node is None:
+            return
 
-        for child in self.ast.children:
-
-            if child.node_type != "WHERE":
-                continue
-
-        for condition in child.children:
+        for condition in where_node.children:
 
             if condition.node_type != "CONDITION":
                 continue
@@ -67,6 +69,20 @@ class SemanticAnalyzer:
                     self.errors.append(
                         f"Column '{column}' expects text."
                     )
+
+    def check_columns(self, table):
+        columns_node = next(
+            (child for child in self.ast.children if child.node_type == "COLUMNS"),
+            None,
+        )
+        if columns_node is None:
+            return
+
+        for column in columns_node.children:
+            if column.value not in SCHEMA[table]:
+                self.errors.append(
+                    f"Column '{column.value}' does not exist."
+                )
 
     def get_errors(self):
         return self.errors

@@ -6,6 +6,7 @@ class SQLGenerator:
     def generate(self):
 
         table = None
+        columns = ["*"]
         conditions = []
 
         # Find table and WHERE
@@ -14,11 +15,14 @@ class SQLGenerator:
             if child.node_type == "TABLE":
                 table = child.value
 
+            elif child.node_type == "COLUMNS":
+                columns = [column.value for column in child.children]
+
             elif child.node_type == "WHERE":
                 conditions = child.children
 
         # Start SQL query
-        sql = f"SELECT * FROM {table}"
+        sql = f"SELECT {', '.join(columns)} FROM {table}"
 
         # Add WHERE conditions
         if conditions:
