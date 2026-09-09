@@ -58,6 +58,7 @@ KEYWORDS = {
     "with": TokenType.KEYWORD,
     "having": TokenType.KEYWORD,
     "is": TokenType.KEYWORD,
+    "starting": TokenType.KEYWORD,
     "and": TokenType.KEYWORD,
     "or": TokenType.KEYWORD,
 }

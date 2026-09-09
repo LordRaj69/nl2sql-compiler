@@ -111,8 +111,38 @@ class Parser:
         if columns:
             select_node.children.append(ASTNode("COLUMNS", children=columns))
 
+        # Optional prefix condition, for example: name starting with a
+        if token and token.value == "starting":
+            if not columns:
+                raise SyntaxError("Expected a column before 'starting with'")
+
+            self.consume()
+            if not self.current_token() or self.current_token().value != "with":
+                raise SyntaxError("Expected 'with' after 'starting'")
+            self.consume()
+
+            value = self.consume()
+            if value is None or value.type not in (TokenType.STRING, TokenType.UNKNOWN):
+                raise SyntaxError("Expected text after 'starting with'")
+
+            select_node.children.append(
+                ASTNode(
+                    "WHERE",
+                    children=[
+                        ASTNode(
+                            "CONDITION",
+                            children=[
+                                ASTNode("COLUMN", columns[-1].value),
+                                ASTNode("OPERATOR", "LIKE"),
+                                ASTNode("VALUE", f"{value.value}%"),
+                            ],
+                        )
+                    ],
+                )
+            )
+
         # Optional WHERE/WHOSE condition
-        if token and token.type == TokenType.KEYWORD and token.value in self.CONDITION_WORDS:
+        elif token and token.type == TokenType.KEYWORD and token.value in self.CONDITION_WORDS:
             self.consume()
 
             where_node = self.parse_conditions()
