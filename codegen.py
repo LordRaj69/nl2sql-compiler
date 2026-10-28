@@ -1,56 +1,25 @@
 class SQLGenerator:
 
-    def __init__(self, ast):
-        self.ast = ast
+    def __init__(self, intermediate):
+        self.intermediate = intermediate
 
     def generate(self):
+        sql = (
+            f"SELECT {', '.join(self.intermediate.columns)} "
+            f"FROM {self.intermediate.table}"
+        )
 
-        table = None
-        columns = ["*"]
-        conditions = []
-
-        # Find table and WHERE
-        for child in self.ast.children:
-
-            if child.node_type == "TABLE":
-                table = child.value
-
-            elif child.node_type == "COLUMNS":
-                columns = [column.value for column in child.children]
-
-            elif child.node_type == "WHERE":
-                conditions = child.children
-
-        # Start SQL query
-        sql = f"SELECT {', '.join(columns)} FROM {table}"
-
-        # Add WHERE conditions
-        if conditions:
-
-            sql += " WHERE "
-
+        if self.intermediate.conditions:
             parts = []
+            for condition in self.intermediate.conditions:
+                if condition.logic:
+                    parts.append(condition.logic.upper())
 
-            for condition in conditions:
+                value = condition.value
+                if not value.isdigit():
+                    value = f"'{value}'"
+                parts.append(f"{condition.column} {condition.operator} {value}")
 
-                if condition.node_type == "CONDITION":
-
-                    column = condition.children[0].value
-                    operator = condition.children[1].value
-                    value = condition.children[2].value
-
-                    # Add quotes around text
-                    if not value.isdigit():
-                        value = f"'{value}'"
-
-                    parts.append(
-                        f"{column} {operator} {value}"
-                    )
-
-                elif condition.node_type == "LOGIC":
-
-                    parts.append(condition.value.upper())
-
-            sql += " ".join(parts)
+            sql += " WHERE " + " ".join(parts)
 
         return sql + ";"

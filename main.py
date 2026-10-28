@@ -1,6 +1,7 @@
 from lexer import tokenize
 from parser import Parser
 from semantic import SemanticAnalyzer
+from intermediate import IntermediateCodeGenerator
 from codegen import SQLGenerator
 from database import DatabaseConnection
 
@@ -38,8 +39,14 @@ def main():
 
         print("\nSemantic Analysis: Valid")
 
-        # Phase 4: Code Generation
-        generator = SQLGenerator(ast)
+        # Phase 4: Intermediate Code Generation
+        intermediate = IntermediateCodeGenerator(ast).generate()
+
+        print("\nIntermediate Code:")
+        print(intermediate.format())
+
+        # Phase 5: SQL Code Generation
+        generator = SQLGenerator(intermediate)
         sql = generator.generate()
 
         print("\nGenerated SQL:")
